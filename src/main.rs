@@ -63,7 +63,8 @@ pub struct Normal {
 }
 impl_vertex!(Normal, normal);
 
-pub const VERTICES: [Vertex; 8] = [
+pub const VERTICES: [Vertex; 9] = [
+	Vertex { position: [1.000000, 1.000000, -1.000000] },
 	Vertex { position: [1.000000, 1.000000, -1.000000] },
 	Vertex { position: [1.000000, -1.000000, -1.000000] },
 	Vertex { position: [1.000000, 1.000000, 1.000000] },
@@ -367,7 +368,7 @@ fn main()
 							100.0,
 						);
 						let view = Matrix4::look_at_rh(
-							Point3::new(0.0, 0.5, 1.0),
+							Point3::new(0.0, 1.0, 1.5),
 							Point3::new(0.0, 0.0, 0.0),
 							Vector3::new(0.0, -1.0, 0.0),
 						);
