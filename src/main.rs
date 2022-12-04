@@ -471,19 +471,20 @@ fn main()
 						&descriptor_set_allocator,
 						layout.clone(),
 						[
-							WriteDescriptorSet::buffer(0, uniform_buffer_subbuffer)
+							WriteDescriptorSet::buffer(0, uniform_buffer_subbuffer),
+							WriteDescriptorSet::image_view_sampler(1, texture.clone(), sampler.clone())
 						]
 					)
 					.unwrap();
 
-					let texture_set = PersistentDescriptorSet::new(
-						&descriptor_set_allocator,
-						layout.clone(),
-						[
-							WriteDescriptorSet::image_view_sampler(0, texture.clone(), sampler.clone())
-						]
-					)
-					.unwrap();
+					// let texture_set = PersistentDescriptorSet::new(
+					// 	&descriptor_set_allocator,
+					// 	layout.clone(),
+					// 	[
+					// 		WriteDescriptorSet::image_view_sampler(1, texture.clone(), sampler.clone())
+					// 	]
+					// )
+					// .unwrap();
 
 
 					let (image_index, suboptimal, acquire_future) =
@@ -529,14 +530,14 @@ fn main()
 							PipelineBindPoint::Graphics, 
 							pipeline.layout().clone(), 
 							0, 
-							set.clone()
+							set
 						)
-						.bind_descriptor_sets(
-							PipelineBindPoint::Graphics, 
-							pipeline.layout().clone(), 
-							0, 
-							texture_set.clone()
-						)
+						// .bind_descriptor_sets(
+						// 	PipelineBindPoint::Graphics, 
+						// 	pipeline.layout().clone(), 
+						// 	0, 
+						// 	texture_set.clone()
+						// )
 						.bind_vertex_buffers(0, (vertex_buffer.clone(), normals_buffer.clone()))
 						.bind_index_buffer(index_buffer.clone())
 						.draw_indexed(index_buffer.len() as u32, 1, 0, 0, 0)
