@@ -65,6 +65,13 @@ pub struct Normal {
 }
 impl_vertex!(Normal, normal);
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Zeroable, Pod)]
+pub struct UV {
+    uv: [f32; 2],
+}
+impl_vertex!(UV, uv);
+
 pub const VERTICES: [Vertex; 9] = [
 	Vertex { position: [1.000000, 1.000000, -1.000000] },
 	Vertex { position: [1.000000, 1.000000, -1.000000] },
@@ -87,6 +94,18 @@ pub const NORMALS: [Normal; 9] = [
 	Normal { normal: [-1.000000, -1.000000, -1.000000] },
 	Normal { normal: [-1.000000, 1.000000, 1.000000] },
 	Normal { normal: [-1.000000, -1.000000, 1.000000] }
+];
+
+pub const UVS: [UV; 9] = [
+	UV { uv: [1.000000, 1.000000] },
+	UV { uv: [1.000000, 1.000000] },
+	UV { uv: [1.000000, 0.000000] },
+	UV { uv: [0.000000, 0.000000] },
+	UV { uv: [0.000000, 1.000000] },
+	UV { uv: [1.000000, 1.000000] },
+	UV { uv: [1.000000, 0.000000] },
+	UV { uv: [0.000000, 1.000000] },
+	UV { uv: [0.000000, 0.000000] }
 ];
 
 pub const INDICES: [u16; 36] = [
@@ -234,7 +253,7 @@ fn main()
 	let memory_allocator = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
 
 	// VERTEX BUFFER
-	let vertex_buffer = CpuAccessibleBuffer::<[Vertex]>::from_iter(
+	let vertex_buffer = CpuAccessibleBuffer::from_iter(
 		&memory_allocator, 
 		BufferUsage::VERTEX_BUFFER, 
 		false, 
@@ -248,6 +267,15 @@ fn main()
         BufferUsage::VERTEX_BUFFER,
         false,
         NORMALS,
+    )
+    .unwrap();
+
+	// UV BUFFER
+	let uvs_buffer = CpuAccessibleBuffer::from_iter(
+        &memory_allocator,
+        BufferUsage::VERTEX_BUFFER,
+        false,
+        UVS,
     )
     .unwrap();
 
@@ -312,7 +340,8 @@ fn main()
 
 	
     let texture = {
-		let png_bytes = include_bytes!("./../images/woag.png").to_vec();
+		// let png_bytes = include_bytes!("./../images/woag.png").to_vec();
+		let png_bytes = include_bytes!("./../images/solid_red.png").to_vec();
         let cursor = Cursor::new(png_bytes);
         let decoder = png::Decoder::new(cursor);
         let mut reader = decoder.read_info().unwrap();
@@ -335,8 +364,11 @@ fn main()
             &mut uploads,
         )
         .unwrap();
-		
-        ImageView::new_default(image).unwrap()
+
+		unsafe
+		{
+			ImageView::new_default(image.forced_undefined_initial_layout(true)).unwrap()
+		}
     };
 
 	let sampler = Sampler::new(
@@ -515,7 +547,7 @@ fn main()
 						.begin_render_pass(
 							RenderPassBeginInfo { 
 								clear_values: vec![
-									Some([0.0, 0.0, 0.0, 1.0].into()),
+									Some([0.3, 0.3, 0.6, 1.0].into()),
 									Some(1f32.into())
 								],
 								..RenderPassBeginInfo::framebuffer(
@@ -538,7 +570,7 @@ fn main()
 						// 	0, 
 						// 	texture_set.clone()
 						// )
-						.bind_vertex_buffers(0, (vertex_buffer.clone(), normals_buffer.clone()))
+						.bind_vertex_buffers(0, (vertex_buffer.clone(), normals_buffer.clone(), uvs_buffer.clone()))
 						.bind_index_buffer(index_buffer.clone())
 						.draw_indexed(index_buffer.len() as u32, 1, 0, 0, 0)
 						.unwrap()
@@ -628,6 +660,7 @@ fn window_size_dependent_setup(
 			BuffersDefinition::new()
 				.vertex::<Vertex>()
 				.vertex::<Normal>()
+				.vertex::<UV>()
 		)
 		.vertex_shader(vs.entry_point("main").unwrap(), ())
 		.input_assembly_state(InputAssemblyState::new())
@@ -645,8 +678,8 @@ fn window_size_dependent_setup(
 		.fragment_shader(fs.entry_point("main").unwrap(), ())
 		.depth_stencil_state(DepthStencilState::simple_depth_test())
 		.color_blend_state(ColorBlendState::new(subpass.num_color_attachments()).blend_alpha())
-        .render_pass(subpass)
-		// .render_pass(Subpass::from(render_pass, 0).unwrap())
+        // .render_pass(subpass)
+		.render_pass(Subpass::from(render_pass, 0).unwrap())
 		.build(memory_allocator.device().clone())
 		.unwrap();
 
